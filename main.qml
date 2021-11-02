@@ -49,8 +49,15 @@ ApplicationWindow {
         }
         onMediaStatusChanged: {
             if (status === MediaPlayer.EndOfMedia) {
-                musicTool.nextMusic()
+                musicTool.next_music()
                 show_music()
+            }
+        }
+        onPlaybackStateChanged: {
+            if (playbackState === MediaPlayer.PlayingState) {
+                musicTool.on_music_play()
+            } else if (playbackState === MediaPlayer.PausedState) {
+                musicTool.on_music_paused()
             }
         }
     }
@@ -101,7 +108,7 @@ ApplicationWindow {
                 onTriggered: {
                     musicImageRotation.stop()
                     musicImageRotation.from = musicImageRotation.to
-                    musicImageRotation.to = musicImageRotation.from + 12
+                    musicImageRotation.to = musicImageRotation.from + 6
                     musicImageRotation.start()
                 }
             }
@@ -153,20 +160,20 @@ ApplicationWindow {
                     width: parent.width
                     spacing: 6
                     Button {
-                        text: musicPlayer.playbackState === MediaPlayer.PlayingState ? "Pause" : "Play"
+                        text: musicPlayer.playbackState === MediaPlayer.PlayingState ? "暂停" : "播放"
                         onClicked: musicPlayer.playbackState === MediaPlayer.PlayingState ? musicPlayer.pause() : musicPlayer.play()
                     }
                     Button {
                         text: "Next"
                         onClicked: {
-                            musicTool.nextMusic()
+                            musicTool.next_music()
                             show_music()
                         }
                     }
                     Button {
                         text: "Skip"
                         onClicked: {
-                            musicTool.skipMusic()
+                            musicTool.skip_music()
                             show_music()
                         }
                     }
