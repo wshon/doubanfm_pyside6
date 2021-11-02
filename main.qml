@@ -20,6 +20,8 @@ ApplicationWindow {
         musicPlayer.source = musicTool.get_music_url()
         musicImage.source = musicTool.get_music_pic()
         musicPlayer.play()
+        musicImageRotation.to = 0
+        musicImageRotationTimer.restart()
     }
 
     Component.onCompleted: {
@@ -90,14 +92,23 @@ ApplicationWindow {
                 source: musicImage.status == Image.Ready ? musicImage : musicImageDefault
                 maskSource: musicImageMask
             }
+            Timer {
+                id: musicImageRotationTimer
+                interval: 200
+                repeat: true
+                running: musicPlayer.playbackState === MediaPlayer.PlayingState
+                triggeredOnStart: true
+                onTriggered: {
+                    musicImageRotation.stop()
+                    musicImageRotation.from = musicImageRotation.to
+                    musicImageRotation.to = musicImageRotation.from + 12
+                    musicImageRotation.start()
+                }
+            }
             RotationAnimator {
                 id: musicImageRotation
                 target: musicImageShow;
-                from: 0;
-                to: 360;
-                duration: 10000
-                loops : Animation.Infinite
-                running: musicPlayer.playbackState === MediaPlayer.PlayingState
+                duration: musicImageRotationTimer.interval - 1
             }
         }
         Rectangle {
@@ -118,6 +129,7 @@ ApplicationWindow {
                 }
 
                 Row {
+                    spacing: 2
                     width: parent.width
                     Label {
                         id: musicPosition
