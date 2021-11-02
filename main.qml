@@ -59,6 +59,9 @@ ApplicationWindow {
         Rectangle {
             width: parent.height; height: width
             radius: width / 2
+            border.width: width / 2
+            border.color: "#80000000"
+            color: "#00000000"
             Image {
                 id: musicImage
                 anchors.fill: parent
@@ -98,6 +101,7 @@ ApplicationWindow {
             }
         }
         Rectangle {
+            color: "#00000000"
             width: parent.width - parent.height; height: parent.height
             Column {
                 anchors.fill: parent
