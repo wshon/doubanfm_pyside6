@@ -31,6 +31,20 @@ ApplicationWindow {
     MusicTool {
         id: musicTool
     }
+    Connections {
+        target: musicTool
+        function onSendCommand(state) {
+            if (state === "play") {
+                musicPlayer.play()
+            } else if (state === "pause") {
+                musicPlayer.pause()
+            } else if (state === "next") {
+                musicTool.next_music()
+                show_music()
+            }
+            return musicPlayer.playbackState
+        }
+    }
 
     MediaPlayer {
         id: musicPlayer

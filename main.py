@@ -3,7 +3,7 @@ import platform
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Slot
+from PySide6.QtCore import QObject, Slot, Signal
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine, QmlElement
 from PySide6.QtQuickControls2 import QQuickStyle
@@ -19,9 +19,10 @@ if platform.system() == 'Windows':
             SystemMediaTransportControlsButton, MediaPlaybackStatus, SystemMediaTransportControlsDisplayUpdater,
             MediaPlaybackType
         )
+
         system = 'Windows'
-    except Exception as e:
-        logging.exception(e)
+    except Exception as _e:
+        logging.exception(_e)
     pass
 
 
@@ -32,7 +33,8 @@ class SystemMediaInterface:
             self._smtc: SystemMediaTransportControls = self._mp.system_media_transport_controls
             self._smtc.is_play_enabled = True
             self._smtc.is_pause_enabled = True
-            # self._smtc.is_next_enabled = True
+            self._smtc.is_next_enabled = True
+            self._smtc.add_button_pressed(self._on_button_pressed)
             self._du: SystemMediaTransportControlsDisplayUpdater = self._smtc.display_updater
             self._du.type = MediaPlaybackType.MUSIC
             self._du.update()
@@ -55,13 +57,13 @@ class SystemMediaInterface:
             pass
 
     def on_play_event(self) -> bool:
-        pass
+        raise NotImplementedError
 
     def on_pause_event(self) -> bool:
-        pass
+        raise NotImplementedError
 
     def on_next_event(self) -> bool:
-        pass
+        raise NotImplementedError
 
     def set_status_playing(self):
         try:
@@ -130,12 +132,30 @@ class MusicTool(QObject):
         QObject.__init__(self)
         self.db = DoubanFM()
         self.smi = SystemMediaInterface()
+        self.smi.on_play_event = self.on_play_event
+        self.smi.on_pause_event = self.on_pause_event
+        self.smi.on_next_event = self.on_next_event
         self.load_music()
 
     def load_music(self, action=None):
         song = self.db.get_next_song(action)
         self.music = Music(song)
 
+    sendCommand = Signal(str)
+
+    def on_play_event(self):
+        # noinspection PyUnresolvedReferences
+        self.sendCommand.emit('play')
+
+    def on_pause_event(self):
+        # noinspection PyUnresolvedReferences
+        self.sendCommand.emit('pause')
+
+    def on_next_event(self):
+        # noinspection PyUnresolvedReferences
+        self.sendCommand.emit('next')
+
+    # noinspection PyTypeChecker
     @Slot(int, result=str)
     def get_time(self, t):
         t = t // 1000
@@ -149,22 +169,26 @@ class MusicTool(QObject):
         s = ':'.join(h)
         return s
 
+    # noinspection PyTypeChecker
     @Slot(result=str)
     def get_music_title(self):
         title = self.music.title if self.music else '未播放'
         self.smi.set_title(title)
         return title
 
+    # noinspection PyTypeChecker
     @Slot(result=str)
     def get_music_artist(self):
         artist = self.music.artist if self.music else '跌名'
         self.smi.set_artist(artist)
         return artist
 
+    # noinspection PyTypeChecker
     @Slot(result=str)
     def get_music_url(self):
         return self.music.url if self.music else ''
 
+    # noinspection PyTypeChecker
     @Slot(result=str)
     def get_music_pic(self):
         return self.music.picture if self.music else ''
