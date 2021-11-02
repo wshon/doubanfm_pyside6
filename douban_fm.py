@@ -236,7 +236,7 @@ class DoubanFM:
     _channel_maps = {}
     current_channel: 'Channel' = None
     current_song: Optional['Song'] = None
-    models = []
+    models = None
 
     def __init__(self):
         self._api = DoubanFMApi(
@@ -277,17 +277,16 @@ class DoubanFM:
         self.current_song = None
 
     def _playlist(self, play_type=None, **kwargs):
-        if play_type is None:
-            if self.current_song:
-                kwargs.update({
-                    'sid': self.current_song.sid,
-                    'pt': '',
-                    'pb': self.current_song.kbps,
-                    'apikey': self.api_key
-                })
-                play_type = Action.Play
-            else:
-                play_type = Action.New
+        if self.current_song:
+            kwargs.update({
+                'sid': self.current_song.sid,
+                'pt': '',
+                'pb': self.current_song.kbps,
+                'apikey': self.api_key
+            })
+            play_type = play_type or Action.Play
+        else:
+            play_type = play_type or Action.New
         playlist = self._api.get_playlist(self.current_channel, play_type, **kwargs)
         if play_type != Action.End:
             assert playlist

@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
-import QtQuick.Window
+import QtMultimedia
+import Qt5Compat.GraphicalEffects
 
 import MusicUtil
 
@@ -12,36 +12,109 @@ ApplicationWindow {
     height: 240
     visible: true
     title: "Proxy Tool"
+    flags: WindowType.WindowMinMaxButtonsHint
+
+    function show_music() {
+        musicTitle.text = musicTool.get_music_title()
+        musicArtist.text = musicTool.get_music_artist()
+        musicPlayer.source = musicTool.get_music_url()
+        musicImage.source = musicTool.get_music_pic()
+        musicPlayer.play()
+    }
+
+    Component.onCompleted: {
+        show_music()
+    }
+
+    MusicTool {
+        id: musicTool
+    }
+
+    MediaPlayer {
+        id: musicPlayer
+        audioOutput: AudioOutput {
+            volume: 10
+        }
+        onDurationChanged: {
+            musicProcess.to = duration
+            musicDuration.text = musicTool.get_time(duration)
+        }
+        onPositionChanged: {
+            if (!musicProcess.pressed) {
+                musicProcess.value = position
+                musicPosition.text = musicTool.get_time(position)
+            }
+        }
+        onMediaStatusChanged: {
+            if (status === MediaPlayer.EndOfMedia) {
+                musicTool.nextMusic()
+                show_music()
+            }
+        }
+    }
 
     Row {
         anchors.fill: parent
-        spacing: 6
-        Item {
-            width: 120; height: 120
+        anchors.margins: 10
+        Rectangle {
+            width: parent.height; height: width
+            radius: width / 2
             Image {
                 id: musicImage
-                width: 120; height: 120
-                anchors.margins: 10
-                source: ""
-                asynchronous: true
+                anchors.fill: parent
+                anchors.margins: 8
                 cache: false
                 fillMode: Image.PreserveAspectFit
+                visible: false
+            }
+            Image {
+                id: musicImageDefault
+                anchors.fill: parent
+                anchors.margins: 8
+                source: "https://img2.doubanio.com/f/music/cc57bd208b5048ff760ca338c30ec9370a96f5ba/pics/music/songlist/cover_default_v1.png"
+                fillMode: Image.PreserveAspectFit
+                visible: false
+            }
+            Rectangle {
+                id: musicImageMask
+                anchors.fill: parent
+                radius: width / 2
+                visible: false
+            }
+            OpacityMask {
+                id: musicImageShow
+                anchors.fill: parent
+                source: musicImage.status == Image.Ready ? musicImage : musicImageDefault
+                maskSource: musicImageMask
+            }
+            RotationAnimator {
+                id: musicImageRotation
+                target: musicImageShow;
+                from: 0;
+                to: 360;
+                duration: 10000
+                loops : Animation.Infinite
+                running: musicPlayer.playbackState === MediaPlayer.PlayingState
             }
         }
-        Item {
-            width: 620; height: 120
+        Rectangle {
+            width: parent.width - parent.height; height: parent.height
             Column {
-
-                Text {
+                anchors.fill: parent
+                anchors.margins: 8
+                Label {
                     id: musicTitle
+                    width: parent.width
                     font.pixelSize: 25
                 }
-                Text {
+                Label {
                     id: musicArtist
+                    width: parent.width
                     font.pixelSize: 15
                 }
 
                 Row {
+                    width: parent.width
                     Label {
                         id: musicPosition
                         text: "00:00"
@@ -55,83 +128,38 @@ ApplicationWindow {
                 Slider {
                     id: musicProcess
                     width: parent.width
+                    onMoved: {
+                        musicPosition.text = musicTool.get_time(value)
+                        musicPlayer.position = value
+                    }
                 }
                 Row {
+                    width: parent.width
+                    spacing: 6
                     Button {
-                        text: "Pause"
-                        onClicked: musicTool.pauseMusic()
+                        text: musicPlayer.playbackState === MediaPlayer.PlayingState ? "Pause" : "Play"
+                        onClicked: musicPlayer.playbackState === MediaPlayer.PlayingState ? musicPlayer.pause() : musicPlayer.play()
                     }
                     Button {
-                        text: "Play"
-                        onClicked: musicTool.playMusic()
+                        text: "Next"
+                        onClicked: {
+                            musicTool.nextMusic()
+                            show_music()
+                        }
                     }
                     Button {
-                        text: "Next Music"
-                        onClicked: musicTool.nextMusic()
+                        text: "Skip"
+                        onClicked: {
+                            musicTool.skipMusic()
+                            show_music()
+                        }
                     }
                     Button {
                         text: "+10S"
-                        onClicked: musicTool.skip10s()
+                        onClicked: musicPlayer.position = musicPlayer.position + 10 * 1000
                     }
                 }
-                Label {
-                    id: musicUrl
-                    text: "url"
-                }
-                Label {
-                    id: musicPic
-                    text: "pic"
-                }
             }
-        }
-
-    }
-
-//        Rectangle {
-//            color: "red";
-//            width: 50; height: 50
-//        }
-//
-//        TextField  {
-//            id: input1
-//            x: 8; y: 8
-//            width: 96; height: 20
-//            focus: true
-//            selectByMouse: true
-//            text: "Text Input 1"
-//        }
-
-    MusicTool {
-        id: musicTool
-    }
-    Connections {
-        target: musicTool
-        function onSetMusicTitle(text) {
-            musicTitle.text = text
-        }
-        function onSetMusicArtist(text) {
-            musicArtist.text = text
-        }
-        function onSetMusicUrl(text) {
-            musicUrl.text = text
-        }
-        function onSetMusicPic(text) {
-            musicPic.text = text
-            musicImage.source = text
-        }
-        function onSetDuration(value) {
-            musicProcess.to = value
-        }
-        function onSetPosition(value) {
-            if (!musicProcess.pressed) {
-                musicProcess.value = value
-            }
-        }
-        function onSetDurationText(text) {
-            musicDuration.text = text
-        }
-        function onSetPositionText(text) {
-            musicPosition.text = text
         }
     }
 }
