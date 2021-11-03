@@ -1,5 +1,7 @@
+import base64
 import json
 import logging
+import os.path
 import sys
 from dataclasses import dataclass
 from typing import List, Optional
@@ -127,6 +129,7 @@ class DoubanFMApi:
 
     def __init__(self, option):
         self.option = option
+        self.load_cookie()
 
         class _Req:
             _api = self
@@ -151,7 +154,7 @@ class DoubanFMApi:
                 assert rsp.getcode() == 200, f'Request Fail: {rsp.getcode()}-{rsp.read()}'
                 cookie = rsp.getheader('set-cookie')
                 if cookie:
-                    self._api._cookie = cookie.split(';', 1)[0]
+                    self._api.save_cookie(cookie.split(';', 1)[0])
                     pass
                 rsp_data = json.load(rsp)
                 logging.debug(f'RSP: {rsp_data}')
@@ -165,6 +168,25 @@ class DoubanFMApi:
             pass
 
         self._req = _Req
+        pass
+
+    def load_cookie(self):
+        cookie = None
+        try:
+            if os.path.exists('.cookie'):
+                with open('.user_data', 'rb') as fp:
+                    cookie = base64.b64decode(fp.read()).decode()
+        except Exception as e:
+            logging.exception(e)
+        self._cookie = cookie
+
+    def save_cookie(self, cookie: str):
+        self._cookie = cookie
+        try:
+            with open('.user_data', 'wb') as fp:
+                fp.write(base64.b64encode(cookie.encode()))
+        except Exception as e:
+            logging.exception(e)
         pass
 
     def get_channels(self):
