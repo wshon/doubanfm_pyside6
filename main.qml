@@ -5,14 +5,14 @@ import Qt5Compat.GraphicalEffects
 
 import MusicUtil
 
-ApplicationWindow {
+Window {
     id: root
 
-    width: 640
-    height: 240
+    width: 640; maximumWidth: width; minimumWidth: width
+    height: 240; maximumHeight: height; minimumHeight: height
     visible: true
-    title: "Proxy Tool"
-    flags: WindowType.WindowMinMaxButtonsHint
+    title: "DoubanFM by 𝚆𝚂𝚑𝚘𝚗"
+    flags: Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint
 
     function show_music() {
         musicTitle.text = musicTool.get_music_title()
